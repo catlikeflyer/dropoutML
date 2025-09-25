@@ -1,0 +1,65 @@
+name: CI/CD Pipeline for DropoutML
+
+on:
+  push:
+    branches:
+      - main
+
+jobs:
+  build-and-deploy:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v3
+
+      - name: Set up Python
+        uses: actions/setup-python@v4
+        with:
+          python-version: '3.12'
+
+      - name: Install dependencies
+        run: pip install -r requirements.txt
+
+      # In a real project, you would add linting and testing steps here
+      # - name: Lint with flake8
+      #   run: |
+      #     pip install flake8
+      #     flake8 .
+      # - name: Run tests
+      #   run: |
+      #     pip install pytest
+      #     pytest
+
+      - name: Run training script
+        run: python scripts/train.py
+        # Note: This assumes a persistent MLflow server. For a pure CI/CD run,
+        # you might log artifacts directly to S3.
+
+      - name: Configure AWS Credentials
+        uses: aws-actions/configure-aws-credentials@v2
+        with:
+          aws-access-key-id: ${{ secrets.AWS_ACCESS_KEY_ID }}
+          aws-secret-access-key: ${{ secrets.AWS_SECRET_ACCESS_KEY }}
+          aws-region: us-east-1 # Change to your region
+
+      - name: Login to Amazon ECR
+        id: login-ecr
+        uses: aws-actions/amazon-ecr-login@v1
+
+      - name: Build, tag, and push image to Amazon ECR
+        env:
+          ECR_REGISTRY: ${{ steps.login-ecr.outputs.registry }}
+          ECR_REPOSITORY: student-predictor # Your ECR repo name
+          IMAGE_TAG: ${{ github.sha }}
+        run: |
+          docker build -t $ECR_REGISTRY/$ECR_REPOSITORY:$IMAGE_TAG .
+          docker push $ECR_REGISTRY/$ECR_REPOSITORY:$IMAGE_TAG
+
+      - name: Update Lambda Function
+        env:
+          ECR_REGISTRY: ${{ steps.login-ecr.outputs.registry }}
+          ECR_REPOSITORY: student-predictor
+          IMAGE_TAG: ${{ github.sha }}
+        run: |
+          aws lambda update-function-code --function-name student-dropout-function \ # Your Lambda function name
+          --image-uri $ECR_REGISTRY/$ECR_REPOSITORY:$IMAGE_TAG
