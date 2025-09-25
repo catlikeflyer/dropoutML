@@ -1,0 +1,58 @@
+# Python
+*.pyc
+__pycache__/
+*.pyo
+*.pyd
+*.env
+.env
+venv/
+env/
+*.egg-info/
+dist/
+build/
+
+# Jupyter Notebooks
+.ipynb_checkpoints
+
+# Data files
+*.csv
+*.tsv
+*.xls
+*.xlsx
+*.h5
+*.db
+*.sqlite
+*.parquet
+*.feather
+*.json
+*.pickle
+*.pkl
+
+# Model files
+*.h5
+*.pt
+*.pth
+*.joblib
+*.sav
+*.ckpt
+
+# Logs and outputs
+*.log
+*.out
+*.err
+
+# Images and plots
+*.png
+*.jpg
+*.jpeg
+*.gif
+*.svg
+
+# Temporary files
+*.tmp
+*.bak
+
+# OS files
+.DS_Store
+Thumbs.db
+```
